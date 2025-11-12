@@ -9,8 +9,10 @@ export default defineConfig({
     port: 3000,
     proxy: {      
       '/api': {       
-          target: 'http://localhost:5000',
-          changeOrigin: true,      
+          target: "https://productivity-app-server-ashy.vercel.app/",
+          changeOrigin: true,
+          secure: true,
+          rewrite: (path) => path    
       },    
     },
   },
