@@ -3,7 +3,9 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 import mongoose from 'mongoose';
 import authRoutes from './routes/auth.js';
-import noteRoutes from './routes/notes.js';  // ✅ Import notes routes
+import noteRoutes from './routes/notes.js';  
+import listsRoutes from './routes/lists.js';  
+import todosRoutes from './routes/todos.js';  
 
 dotenv.config();
 
@@ -38,14 +40,16 @@ mongoose.connect(process.env.MONGODB_URI)
 
 // Routes
 app.use('/auth', authRoutes);
-app.use('/notes', noteRoutes);  // ✅ Mount notes routes
+app.use('/notes', noteRoutes);  
+app.use('/lists', listsRoutes);  
+app.use('/todos', todosRoutes);  
 
 // Health check
 app.get('/', (req, res) => {
   res.json({ 
     message: 'API is running', 
     status: 'healthy',
-    routes: ['/auth/login', '/auth/register', '/notes']
+    routes: ['/auth/login', '/auth/register', '/notes', '/lists', '/todos']
   });
 });
 
@@ -66,11 +70,10 @@ app.use((req, res) => {
   res.status(404).json({ 
     message: 'Route not found',
     path: req.path,
-    availableRoutes: ['/auth/login', '/auth/register', '/notes']
+    availableRoutes: ['/auth/login', '/auth/register', '/notes', '/lists', '/todos']
   });
 });
 
-// Error handler
 app.use((err, req, res, next) => {
   console.error('❌ Error:', err);
   res.status(err.status || 500).json({ 
