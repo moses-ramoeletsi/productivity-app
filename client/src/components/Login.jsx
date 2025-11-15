@@ -17,28 +17,33 @@ const Login = () => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
- const handleSubmit = async (e) => {
-  e.preventDefault();
-  setLoading(true);
-  try {
-    const response = await api.post('/auth/login', formData);
-    toast.success('Login successful!');
-    navigate('/dashboard');
-  } catch (error) {
-    toast.error(error.response?.data?.message || 'Login failed');
-  } finally {
-    setLoading(false);
-  }
-};
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    try {
+      const response = await api.post('/auth/login', formData);
+      
+      // Store token and user data
+      localStorage.setItem('token', response.data.token);
+      localStorage.setItem('user', JSON.stringify(response.data.user));
+      
+      toast.success('Login successful!');
+      navigate('/dashboard');
+    } catch (error) {
+      toast.error(error.response?.data?.message || 'Login failed');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
-    <div className="min-h-screen bg-linear-to-br from-blue-50 via-white to-purple-50 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 flex items-center justify-center p-4">
       <div className="w-full max-w-md">
         {/* Card */}
         <div className="bg-white rounded-2xl shadow-xl p-8 border border-gray-100">
           {/* Logo/Brand */}
           <div className="text-center mb-8">
-            <div className="inline-flex items-center justify-center w-16 h-16 bg-linear-to-br from-blue-600 to-purple-600 rounded-xl mb-4">
+            <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-blue-600 to-purple-600 rounded-xl mb-4">
               <LogIn className="w-8 h-8 text-white" />
             </div>
             <h1 className="text-3xl font-bold text-gray-900 mb-2">Welcome Back</h1>
@@ -121,7 +126,7 @@ const Login = () => {
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-linear-to-r from-blue-600 to-purple-600 text-white py-3 px-4 rounded-lg font-medium hover:from-blue-700 hover:to-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-lg hover:shadow-xl"
+              className="w-full bg-gradient-to-r from-blue-600 to-purple-600 text-white py-3 px-4 rounded-lg font-medium hover:from-blue-700 hover:to-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-lg hover:shadow-xl"
             >
               {loading ? (
                 <span className="flex items-center justify-center">
