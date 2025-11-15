@@ -1,11 +1,14 @@
 import { useState, useEffect } from 'react';
 import toast from 'react-hot-toast';
+import { Trash2, X } from 'lucide-react';
 import api from '../utils/api.js';
 
 const Todos = ({ onUpdate }) => {
   const [todos, setTodos] = useState([]);
   const [showForm, setShowForm] = useState(false);
   const [editingTodo, setEditingTodo] = useState(null);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [todoToDelete, setTodoToDelete] = useState(null);
   const [formData, setFormData] = useState({ task: '', completed: false });
 
   useEffect(() => {
@@ -47,11 +50,23 @@ const Todos = ({ onUpdate }) => {
     setShowForm(true);
   };
 
-  const handleDelete = async (id) => {
-    if (!confirm('Are you sure you want to delete this todo?')) return;
+  const openDeleteDialog = (todo) => {
+    setTodoToDelete(todo);
+    setShowDeleteDialog(true);
+  };
+
+  const closeDeleteDialog = () => {
+    setShowDeleteDialog(false);
+    setTodoToDelete(null);
+  };
+
+  const confirmDelete = async () => {
+    if (!todoToDelete) return;
+    
     try {
-      await api.delete(`/todos/${id}`);
+      await api.delete(`/todos/${todoToDelete._id}`);
       toast.success('Todo deleted successfully');
+      closeDeleteDialog();
       fetchTodos();
     } catch (error) {
       toast.error('Failed to delete todo');
@@ -90,6 +105,59 @@ const Todos = ({ onUpdate }) => {
           {showForm ? 'Cancel' : '+ Add Todo'}
         </button>
       </div>
+
+      {/* Delete Confirmation Dialog */}
+      {showDeleteDialog && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6 animate-scale-in">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center">
+                  <Trash2 className="w-6 h-6 text-red-600" />
+                </div>
+                <h3 className="text-xl font-semibold text-gray-900">Delete Todo</h3>
+              </div>
+              <button
+                onClick={closeDeleteDialog}
+                className="text-gray-400 hover:text-gray-600 transition"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="mb-6">
+              <p className="text-gray-600 mb-3">
+                Are you sure you want to delete this todo? This action cannot be undone.
+              </p>
+              {todoToDelete && (
+                <div className="bg-gray-50 rounded-md p-3 border border-gray-200">
+                  <p className="font-semibold text-gray-800">
+                    {todoToDelete.task}
+                  </p>
+                  <p className="text-xs text-gray-500 mt-1">
+                    {todoToDelete.completed ? '✓ Completed' : '○ Pending'}
+                  </p>
+                </div>
+              )}
+            </div>
+
+            <div className="flex gap-3">
+              <button
+                onClick={closeDeleteDialog}
+                className="flex-1 px-4 py-2 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 transition font-medium"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmDelete}
+                className="flex-1 px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition font-medium"
+              >
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Form */}
       {showForm && (
@@ -181,7 +249,7 @@ const Todos = ({ onUpdate }) => {
                       Edit
                     </button>
                     <button
-                      onClick={() => handleDelete(todo._id)}
+                      onClick={() => openDeleteDialog(todo)}
                       className="px-3 py-1 bg-red-50 text-red-600 rounded-md hover:bg-red-100 transition text-sm"
                     >
                       Delete
@@ -227,7 +295,7 @@ const Todos = ({ onUpdate }) => {
                       Edit
                     </button>
                     <button
-                      onClick={() => handleDelete(todo._id)}
+                      onClick={() => openDeleteDialog(todo)}
                       className="px-3 py-1 bg-red-50 text-red-600 rounded-md hover:bg-red-100 transition text-sm"
                     >
                       Delete
@@ -239,6 +307,22 @@ const Todos = ({ onUpdate }) => {
           </div>
         </div>
       </div>
+
+      <style jsx>{`
+        @keyframes scale-in {
+          from {
+            opacity: 0;
+            transform: scale(0.9);
+          }
+          to {
+            opacity: 1;
+            transform: scale(1);
+          }
+        }
+        .animate-scale-in {
+          animation: scale-in 0.2s ease-out;
+        }
+      `}</style>
     </div>
   );
 };

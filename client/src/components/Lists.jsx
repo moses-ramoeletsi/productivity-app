@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import toast from 'react-hot-toast';
+import { Trash2, X, ShoppingCart, Heart } from 'lucide-react';
 import api from '../utils/api.js';
 
 const Lists = ({ onUpdate }) => {
@@ -9,6 +10,9 @@ const Lists = ({ onUpdate }) => {
   const [showWishlistForm, setShowWishlistForm] = useState(false);
   const [editingList, setEditingList] = useState(null);
   const [editingWishlist, setEditingWishlist] = useState(null);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [itemToDelete, setItemToDelete] = useState(null);
+  const [deleteType, setDeleteType] = useState(''); // 'list' or 'wishlist'
   const [formData, setFormData] = useState({ 
     title: '', 
     items: [{ name: '', quantity: 1, price: 0 }] 
@@ -48,6 +52,37 @@ const Lists = ({ onUpdate }) => {
 
   const calculateListTotal = (items) => {
     return items.reduce((sum, item) => sum + calculateItemTotal(item), 0);
+  };
+
+  const openDeleteDialog = (item, type) => {
+    setItemToDelete(item);
+    setDeleteType(type);
+    setShowDeleteDialog(true);
+  };
+
+  const closeDeleteDialog = () => {
+    setShowDeleteDialog(false);
+    setItemToDelete(null);
+    setDeleteType('');
+  };
+
+  const confirmDelete = async () => {
+    if (!itemToDelete) return;
+    
+    try {
+      if (deleteType === 'list') {
+        await api.delete(`/lists/${itemToDelete._id}`);
+        toast.success('Shopping list deleted successfully');
+        fetchLists();
+      } else if (deleteType === 'wishlist') {
+        await api.delete(`/wishlists/${itemToDelete._id}`);
+        toast.success('Wishlist deleted successfully');
+        fetchWishlists();
+      }
+      closeDeleteDialog();
+    } catch (error) {
+      toast.error(`Failed to delete ${deleteType}`);
+    }
   };
 
   const handleSubmit = async (e) => {
@@ -126,28 +161,6 @@ const Lists = ({ onUpdate }) => {
     setShowWishlistForm(true);
   };
 
-  const handleDelete = async (id) => {
-    if (!confirm('Are you sure you want to delete this list?')) return;
-    try {
-      await api.delete(`/lists/${id}`);
-      toast.success('List deleted successfully');
-      fetchLists();
-    } catch (error) {
-      toast.error('Failed to delete list');
-    }
-  };
-
-  const handleWishlistDelete = async (id) => {
-    if (!confirm('Are you sure you want to delete this wishlist?')) return;
-    try {
-      await api.delete(`/wishlists/${id}`);
-      toast.success('Wishlist deleted successfully');
-      fetchWishlists();
-    } catch (error) {
-      toast.error('Failed to delete wishlist');
-    }
-  };
-
   const toggleBought = async (wishlistId, itemIndex) => {
     try {
       const wishlist = wishlists.find(w => w._id === wishlistId);
@@ -221,6 +234,74 @@ const Lists = ({ onUpdate }) => {
 
   return (
     <div>
+      {/* Delete Confirmation Dialog */}
+      {showDeleteDialog && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6 animate-scale-in">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-3">
+                <div className={`w-12 h-12 rounded-full flex items-center justify-center ${
+                  deleteType === 'list' ? 'bg-green-100' : 'bg-purple-100'
+                }`}>
+                  {deleteType === 'list' ? (
+                    <ShoppingCart className="w-6 h-6 text-green-600" />
+                  ) : (
+                    <Heart className="w-6 h-6 text-purple-600" />
+                  )}
+                </div>
+                <h3 className="text-xl font-semibold text-gray-900">
+                  Delete {deleteType === 'list' ? 'Shopping List' : 'Wishlist'}
+                </h3>
+              </div>
+              <button
+                onClick={closeDeleteDialog}
+                className="text-gray-400 hover:text-gray-600 transition"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="mb-6">
+              <p className="text-gray-600 mb-3">
+                Are you sure you want to delete this {deleteType}? This action cannot be undone.
+              </p>
+              {itemToDelete && (
+                <div className={`rounded-md p-3 border-2 ${
+                  deleteType === 'list' 
+                    ? 'bg-green-50 border-green-200' 
+                    : 'bg-purple-50 border-purple-200'
+                }`}>
+                  <p className="font-semibold text-gray-800 mb-2">
+                    {itemToDelete.title}
+                  </p>
+                  <div className="text-sm text-gray-600">
+                    <p>{itemToDelete.items.length} items</p>
+                    <p className="font-semibold mt-1">
+                      Total: M {calculateListTotal(itemToDelete.items).toFixed(2)}
+                    </p>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <div className="flex gap-3">
+              <button
+                onClick={closeDeleteDialog}
+                className="flex-1 px-4 py-2 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 transition font-medium"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmDelete}
+                className="flex-1 px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition font-medium"
+              >
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Header with Tabs */}
       <div className="mb-6">
         <div className="flex justify-between items-center mb-4">
@@ -516,7 +597,7 @@ const Lists = ({ onUpdate }) => {
                     Edit
                   </button>
                   <button
-                    onClick={() => handleDelete(list._id)}
+                    onClick={() => openDeleteDialog(list, 'list')}
                     className="flex-1 px-3 py-1 bg-red-50 text-red-600 rounded-md hover:bg-red-100 transition text-sm"
                   >
                     Delete
@@ -602,7 +683,7 @@ const Lists = ({ onUpdate }) => {
                     Edit
                   </button>
                   <button
-                    onClick={() => handleWishlistDelete(wishlist._id)}
+                    onClick={() => openDeleteDialog(wishlist, 'wishlist')}
                     className="flex-1 px-3 py-1 bg-red-50 text-red-600 rounded-md hover:bg-red-100 transition text-sm"
                   >
                     Delete
@@ -613,6 +694,22 @@ const Lists = ({ onUpdate }) => {
           )}
         </div>
       </div>
+
+      <style jsx>{`
+        @keyframes scale-in {
+          from {
+            opacity: 0;
+            transform: scale(0.9);
+          }
+          to {
+            opacity: 1;
+            transform: scale(1);
+          }
+        }
+        .animate-scale-in {
+          animation: scale-in 0.2s ease-out;
+        }
+      `}</style>
     </div>
   );
 };
