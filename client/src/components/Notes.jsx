@@ -1,11 +1,14 @@
 import { useState, useEffect } from 'react';
 import toast from 'react-hot-toast';
+import { Trash2, X } from 'lucide-react';
 import api from '../utils/api.js';
 
 const Notes = ({ onUpdate }) => {
   const [notes, setNotes] = useState([]);
   const [showForm, setShowForm] = useState(false);
   const [editingNote, setEditingNote] = useState(null);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [noteToDelete, setNoteToDelete] = useState(null);
   const [formData, setFormData] = useState({ 
     title: '', 
     content: '',
@@ -55,11 +58,23 @@ const Notes = ({ onUpdate }) => {
     setShowForm(true);
   };
 
-  const handleDelete = async (id) => {
-    if (!confirm('Are you sure you want to delete this note?')) return;
+  const openDeleteDialog = (note) => {
+    setNoteToDelete(note);
+    setShowDeleteDialog(true);
+  };
+
+  const closeDeleteDialog = () => {
+    setShowDeleteDialog(false);
+    setNoteToDelete(null);
+  };
+
+  const confirmDelete = async () => {
+    if (!noteToDelete) return;
+    
     try {
-      await api.delete(`/notes/${id}`);
+      await api.delete(`/notes/${noteToDelete._id}`);
       toast.success('Note deleted successfully');
+      closeDeleteDialog();
       fetchNotes();
     } catch (error) {
       toast.error('Failed to delete note');
@@ -101,6 +116,62 @@ const Notes = ({ onUpdate }) => {
           {showForm ? 'Cancel' : '+ Add Note'}
         </button>
       </div>
+
+      {/* Delete Confirmation Dialog */}
+      {showDeleteDialog && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6 animate-scale-in">
+            {/* Header */}
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center">
+                  <Trash2 className="w-6 h-6 text-red-600" />
+                </div>
+                <h3 className="text-xl font-semibold text-gray-900">Delete Note</h3>
+              </div>
+              <button
+                onClick={closeDeleteDialog}
+                className="text-gray-400 hover:text-gray-600 transition"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Content */}
+            <div className="mb-6">
+              <p className="text-gray-600 mb-3">
+                Are you sure you want to delete this note? This action cannot be undone.
+              </p>
+              {noteToDelete && (
+                <div className="bg-gray-50 rounded-md p-3 border border-gray-200">
+                  <p className="font-semibold text-gray-800 mb-1">
+                    {noteToDelete.title}
+                  </p>
+                  <p className="text-sm text-gray-600 line-clamp-2">
+                    {noteToDelete.content}
+                  </p>
+                </div>
+              )}
+            </div>
+
+            {/* Actions */}
+            <div className="flex gap-3">
+              <button
+                onClick={closeDeleteDialog}
+                className="flex-1 px-4 py-2 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 transition font-medium"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmDelete}
+                className="flex-1 px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition font-medium"
+              >
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Form */}
       {showForm && (
@@ -244,7 +315,7 @@ const Notes = ({ onUpdate }) => {
                   Edit
                 </button>
                 <button
-                  onClick={() => handleDelete(note._id)}
+                  onClick={() => openDeleteDialog(note)}
                   className="flex-1 px-3 py-1 bg-red-50 text-red-600 rounded-md hover:bg-red-100 transition text-sm"
                 >
                   Delete
@@ -254,6 +325,22 @@ const Notes = ({ onUpdate }) => {
           ))
         )}
       </div>
+
+      <style jsx>{`
+        @keyframes scale-in {
+          from {
+            opacity: 0;
+            transform: scale(0.9);
+          }
+          to {
+            opacity: 1;
+            transform: scale(1);
+          }
+        }
+        .animate-scale-in {
+          animation: scale-in 0.2s ease-out;
+        }
+      `}</style>
     </div>
   );
 };
