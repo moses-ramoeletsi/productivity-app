@@ -6,6 +6,7 @@ import authRoutes from './routes/auth.js';
 import noteRoutes from './routes/notes.js';  
 import listsRoutes from './routes/lists.js';  
 import todosRoutes from './routes/todos.js';  
+import wishlistsRoutes from './routes/wishlists.js';  
 
 dotenv.config();
 
@@ -42,14 +43,15 @@ mongoose.connect(process.env.MONGODB_URI)
 app.use('/auth', authRoutes);
 app.use('/notes', noteRoutes);  
 app.use('/lists', listsRoutes);  
-app.use('/todos', todosRoutes);  
+app.use('/todos', todosRoutes); 
+app.use('/wishlists', wishlistsRoutes);
 
 // Health check
 app.get('/', (req, res) => {
   res.json({ 
     message: 'API is running', 
     status: 'healthy',
-    routes: ['/auth/login', '/auth/register', '/notes', '/lists', '/todos']
+    routes: ['/auth/login', '/auth/register', '/notes', '/lists', '/todos', '/wishlists']
   });
 });
 
@@ -70,11 +72,11 @@ app.use((req, res) => {
   res.status(404).json({ 
     message: 'Route not found',
     path: req.path,
-    availableRoutes: ['/auth/login', '/auth/register', '/notes', '/lists', '/todos']
+    availableRoutes: ['/auth/login', '/auth/register', '/notes', '/lists', '/todos', '/wishlists']
   });
 });
 
-app.use((err, req, res, next) => {
+app.use((err, req, res, next) => {~
   console.error('❌ Error:', err);
   res.status(err.status || 500).json({ 
     message: err.message || 'Internal server error'
